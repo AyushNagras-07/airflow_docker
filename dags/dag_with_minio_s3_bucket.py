@@ -9,6 +9,7 @@ default_args = {
     'retry_delay': timedelta(minutes=2)
 }
 
+
 with DAG(
     dag_id = 'dag_with_s3_bucket_minio',
     start_date=datetime(2025,12,17),
