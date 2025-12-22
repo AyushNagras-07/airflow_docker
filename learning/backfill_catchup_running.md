@@ -1,0 +1,2 @@
+docker exec -it schedular_id(schedular_id you can get from running the docker ps command)
+airflow dags backfill -s 2025-12-12(date on which you want to run the file using backfill in past) -e 2025-12-17 (the last date you want to run till) dag_id (from the dags_with_catchup_and_backfill.py code )
