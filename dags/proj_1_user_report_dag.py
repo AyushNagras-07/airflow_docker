@@ -5,6 +5,8 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.python import get_current_context
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.sensors.filesystem import FileSensor
+
 
 
 default_args = {
@@ -13,6 +15,14 @@ default_args = {
     'retry_delay':timedelta(minutes=2)
 }
 a = [{'id':70001,'name':"Ayush"},{'id':70005,'name':"Siddhesh"}]
+
+def file_name(exec_date,**kwargs):
+    info = get_current_context()
+    if exec_date:
+        filename = f"{info.get("dag_run").dag_id}/{info.get('ds')}"
+    else:
+        filename = f"{info.get("dag_run").dag_id}/"
+
 
 def outing():
     import os , csv
@@ -89,11 +99,19 @@ with DAG(
     start_date = datetime(2025,12,18),
     schedule_interval = '@daily',
     default_args=default_args,
-    catchup = True
+    catchup = True,
+    max_active_runs=1
 ) as dag:
     start = BashOperator(
         task_id='start',
         bash_command = 'echo starting dag'
+    )
+    wait_for_file = FileSensor(
+        task_id='FileSensor',
+        mode="reschedule",
+        filepath="/opt/airflow/data/raw/{{ dag.dag_id }}/{{ ds }}/users.csv",
+        poke_interval=60,
+        timeout=3600
     )
     task1=PythonOperator(
         task_id='export_data',
@@ -107,8 +125,9 @@ with DAG(
         task_id='insert_data_in_database',
         python_callable = insert_data
     )
+
     end = BashOperator(
         task_id='end',
         bash_command = 'echo ending dag'
     )
-    start >> task1 >> task2 >> task3 >> end
+    start >> wait_for_file >> task1 >> task2 >> task3 >> end
