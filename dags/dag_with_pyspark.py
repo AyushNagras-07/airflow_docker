@@ -163,3 +163,5 @@ with DAG(
     
     # Set task dependencies
     task_get_data >> task_process_spark >> task_save_data
+
+# for details you can check this https://github.com/AyushNagras-07/airflow_docker/blob/master/etl_pyspark_airflow.png
