@@ -38,6 +38,37 @@ def process_data_with_spark(**context):
     """Process user data using PySpark"""
     from pyspark.sql import SparkSession
     from pyspark.sql.functions import col, lit, current_date
+    from pyspark.sql.types import StructType, StructField, StringType, IntegerType ,LongType
+
+
+    schema = StructType([
+        StructField("gender", StringType()),
+        StructField("email", StringType()),
+        StructField("phone", StringType()),
+        StructField("nat", StringType()),
+        StructField("id", StructType([
+            StructField("name", StringType()),
+            StructField("value", StringType())
+        ])),
+        StructField("location", StructType([
+            StructField("city", StringType()),
+            StructField("state", StringType()),
+            StructField("country", StringType()),
+            StructField("postcode", StringType()),
+            StructField("street", StructType([
+                StructField("number", LongType()),
+                StructField("name", StringType())
+            ]))
+        ])),
+        StructField("dob", StructType([
+            StructField("date", StringType()),
+            StructField("age", IntegerType())
+        ])),
+        StructField("registered", StructType([
+            StructField("date", StringType()),
+            StructField("age", IntegerType())
+        ]))
+    ])
 
     
     # Get data from previous task
@@ -55,16 +86,19 @@ def process_data_with_spark(**context):
     
     try:
         # Parse JSON and create DataFrame
-        users_list = json.loads(users_json)
+        # users_list = json.loads(users_json)
+        rdd = spark.sparkContext.parallelize([users_json])
+        df = spark.read.schema(schema).json(rdd)
         
         # Create Spark DataFrame from user data
-        df = spark.createDataFrame(users_list)
+        # df = spark.createDataFrame(users_list)
         
         # Show data
         print(f"Total users: {df.count()}")
         df.printSchema()
         df.show()
-        
+        df.select("location").show(truncate=False)
+
         # Simple transformation - extract and rename columns
         df_processed = df.select(
         col("id").getItem("value").alias("id"),
@@ -72,8 +106,8 @@ def process_data_with_spark(**context):
         col("phone"),
         col("gender"),
         col("nat"),
-        col("location").getItem("country").alias("country"),
-        col("location").getItem("city").alias("city"),
+        col("location.country").alias("country"),
+        col("location.city").alias("city"),
         col("dob").getItem("date").alias("date_of_birth"),
         col("registered").getItem("date").alias("registration_date"),
         current_date().alias("ingestion_date"),
@@ -112,8 +146,8 @@ def save_data(**context):
                 cursor.execute(
                     """
                     INSERT INTO users_daily
-                    (email, phone, nationality, ingestion_date, source_system,gender)
-                    VALUES (%s, %s, %s, %s, %s ,%s)
+                    (email, phone, nationality, ingestion_date, source_system,gender,date_of_birth ,registration_date,country ,city)
+                    VALUES (%s, %s, %s, %s, %s ,%s, %s ,%s ,%s ,%s)
                     """,
                     (
                         row[1],
@@ -121,7 +155,11 @@ def save_data(**context):
                         row[4],
                         ds,
                         "random_user_api",
-                        row[3]
+                        row[3],
+                        row[7],
+                        row[8],
+                        row[5],
+                        row[6]
                     )
                 )
             conn.commit()
