@@ -18,7 +18,7 @@ default_args = {
 def get_data(**context):
     import requests
     
-    url = "https://randomuser.me/api/?results=5"
+    url = "https://randomuser.me/api/?results=150"
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
@@ -97,7 +97,6 @@ def process_data_with_spark(**context):
         print(f"Total users: {df.count()}")
         df.printSchema()
         df.show()
-        df.select("location").show(truncate=False)
 
         # Simple transformation - extract and rename columns
         df_processed = df.select(
