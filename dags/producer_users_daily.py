@@ -22,10 +22,12 @@ def api_data():
     return resp.json()
 
 def upload_json_to_s3(data):
+    info = get_current_context()
+
     s3 = S3Hook(aws_conn_id="aws_conn")
     s3.load_string(
         string_data=json.dumps(data),
-        key="data/sample.json",
+        key=f"data/sample/{info.get('ds')}.json",
         bucket_name="ayush-consumer-producer",
         replace=True,
     )
