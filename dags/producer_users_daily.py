@@ -59,7 +59,7 @@ with DAG(
     dag_id= 'producer_users_daily',
     start_date = datetime(2026,2,5),
     schedule_interval='@daily',
-    catchup = True,
+    catchup = False,
     default_args=default_args
 ) as dag :
     start=BashOperator(
