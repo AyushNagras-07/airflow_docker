@@ -36,8 +36,8 @@ services:
 
   postgres:
     image: postgres:13
-    cpus: 0.5
-    mem_limit: 700m
+    cpus: 2
+    mem_limit: 2g
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
@@ -73,8 +73,8 @@ services:
   airflow-webserver:
     <<: *airflow-common
     command: webserver
-    cpus: 0.5
-    mem_limit: 700m
+    cpus: 2
+    mem_limit: 2g
     ports:
       - "8080:8080"
     healthcheck:
@@ -90,8 +90,8 @@ services:
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
-    cpus: 0.5
-    mem_limit: 700m
+    cpus: 2
+    mem_limit: 2g
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
       interval: 30s
@@ -106,8 +106,8 @@ services:
   airflow-triggerer:
     <<: *airflow-common
     command: triggerer
-    cpus: 0.5
-    mem_limit: 700m
+    cpus: 2
+    mem_limit: 2g
     healthcheck:
       test: ["CMD-SHELL", "airflow jobs check --job-type TriggererJob --hostname \"$${HOSTNAME}\""]
       interval: 30s
