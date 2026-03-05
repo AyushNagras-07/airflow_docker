@@ -13,21 +13,18 @@ default_args = {
     "retries": 3,
     "retry_delay": timedelta(minutes=2),
 }
-
 def transform_users():
 
     from pyspark.sql import SparkSession
     from pyspark.sql.functions import col
+    from pyspark.sql.types import StructType, StructField, StringType, IntegerType
 
     context = get_current_context()
     ds = context["ds"]
 
     spark = SparkSession.builder \
         .appName("consumer-transform") \
-        .config(
-            "spark.jars.packages",
-            "org.apache.hadoop:hadoop-aws:3.3.4"
-        ) \
+        .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:3.3.4") \
         .config("spark.hadoop.fs.s3a.endpoint", "s3.ap-south-1.amazonaws.com") \
         .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
         .getOrCreate()
@@ -35,7 +32,24 @@ def transform_users():
     raw_path = f"s3a://ayush-consumer-producer/data/sample/{ds}.json"
     processed_path = f"s3a://ayush-consumer-producer/data/processed/users/ds={ds}/"
 
-    df = spark.read.json(raw_path)
+    schema = StructType([
+        StructField("id", IntegerType(), True),
+        StructField("name", StringType(), True),
+        StructField("username", StringType(), True),
+        StructField("email", StringType(), True)
+    ])
+
+    df = spark.read.schema(schema).json(raw_path)
+
+    total_records = df.count()
+    print(f"Total records ingested: {total_records}")
+
+    null_count = df.filter(
+        col("id").isNull() | col("email").isNull()
+    ).count()
+
+    if null_count > 0:
+        raise ValueError(f"Data quality check failed. {null_count} rows contain null values.")
 
     df_processed = df.select(
         col("id"),
@@ -43,10 +57,12 @@ def transform_users():
         col("email")
     )
 
+    processed_records = df_processed.count()
+    print(f"Total records processed: {processed_records}")
+
     df_processed.write.mode("overwrite").parquet(processed_path)
 
     spark.stop()
-
 
 def load_to_postgres():
 
