@@ -1,0 +1,9 @@
+apache-airflow==2.8.1
+apache-airflow-providers-amazon==5.0.1
+apache-airflow-providers-postgres==5.0.1
+
+pyspark==3.4.1
+requests==2.31.0
+
+boto3==1.26.135           # used by S3Hook
+psycopg2-binary==2.9.6    # PostgreSQL driver for load_to_postgres
